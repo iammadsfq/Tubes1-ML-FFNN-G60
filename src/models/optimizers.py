@@ -4,6 +4,7 @@ class SGD:
         self.lr = lr
 
     def step(self):
+        # TODO: implement pembaruan bobot dengan mengiterasi semua p di self.parameters
         pass
 
 class Adam: # ini kalo mw implement adam

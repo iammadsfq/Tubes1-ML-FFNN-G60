@@ -11,13 +11,17 @@ class Module:
 
 class Layer(Module):
     def __init__(self, nin, nout, activation='linear'):
-        # Inisialisasi bobot dan bias
-        # Pilihan: Zero, Uniform, Normal, Xavier, He
+        # TODO: inisialisasi bobot dan bias
+        # TODO: implement metode inisialisasi: Zero, Uniform, Normal, Xavier, He
         pass
 
     def __call__(self, x):
-        # Logika forward propagation per layer
+        # TODO: operasi linear: out = (x @ W) + b
+        # TODO: terapkan fungsi aktivasi (linear, relu, sigmoid, tanh, softmax)
         pass
+    def parameters(self):
+        # TODO: return list bobot dan bias
+        return []
 
 class FFNN(Module):
     def __init__(
@@ -30,7 +34,10 @@ class FFNN(Module):
     ):
         self.layers_config = layers_config
         self.loss_name = loss_function
-        # ...
+        
+        # TODO: Buat list self.layers berisi objek-objek Layer berdasarkan config
+        # TODO: Tangani input activations baik berupa string tunggal atau list
+        pass
     
     def fit(self, 
             X_train, 
@@ -44,35 +51,36 @@ class FFNN(Module):
         
         history = {'train_loss': [], 'val_loss': []}
 
-        # training loop (epoch & batch), simpan loss tiap epoch
-        
+        # TODO: Implementasi Mini-batch SGD
+        # TODO: Training loop per epoch:
+        #   1. Forward pass
+        #   2. Hitung Loss (MSE, BCE, atau CCE) & Regularisasi (L1/L2)
+        #   3. Zero grad, lalu Backward pass
+        #   4. Update bobot menggunakan optimizer
+        #   5. Simpan histori loss & tangani verbose (progress bar)
+
         return history
 
     def predict(self, X):
-        # Forward pass untuk prediksi akhir
+        # TODO: Forward pass untuk prediksi akhir
         pass
 
     def forward(self, x):
-        # Iterasi melalui semua layer
-        pass
-    
-    def backward(self, x):
-        # Memanggil proses backpropagation otomatis dari Value
+        # TODO: Alirkan input x melalui setiap layer di self.layers
         pass
 
     def save(self, path):
-        # Menyimpan model
+        # Simpan state_dict (bobot dan bias) ke file
         pass
 
     def load(self, path):
-        # Memuat model
+        # TODO: Muat bobot dan bias dari file ke model
         pass
 
     def plot_weights_distribution(self, layer_indices):
-        # Menampilkan grafik distribusi bobot dari layer-layer yang dipilih
+        # TODO: Menampilkan grafik distribusi bobot dari layer-layer yang dipilih
         pass
 
     def plot_gradients_distribution(self, layer_indices):
-        # Menampilkan grafik distribusi gradien bobot dari layer-layer yang dipilih
+        # TODO: Menampilkan grafik distribusi gradien bobot dari layer-layer yang dipilih
         pass
-    

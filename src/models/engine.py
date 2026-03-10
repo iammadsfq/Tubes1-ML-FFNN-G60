@@ -1,6 +1,6 @@
 import numpy as np
 
-class Value:
+class Tensor:
     """ Menyimpan nilai skalar/matriks dan gradiennya untuk Autodiff. """
     def __init__(self, data, _children=(), _op=''):
         self.data = np.array(data)
@@ -9,12 +9,25 @@ class Value:
         self._backward = lambda: None
 
     def __add__(self, other):
-        def _backward():
-            pass
-        pass
+        out = Tensor(self.data + other.data, (self, other), '+')
 
-    def __mul__(self, other):
-        pass
+        def _backward():
+            self.grad += out.grad
+            other.grad += out.grad
+        
+        out._backward = _backward
+        return out
+
+    def __matmul__(self, other):
+        out = Tensor(self.data @ other.data, (self, other), '@')
+
+        def _backward():
+            self.grad += out.grad @ other.data.T
+            other.grad *= self.data.T @ out.grad
+        
+        out._backward = _backward
+        return out
+
 
     def backward(self):
         """ Memulai proses backpropagation dari node ini. """
