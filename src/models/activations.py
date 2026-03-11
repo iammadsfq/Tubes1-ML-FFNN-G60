@@ -13,9 +13,13 @@ def linear(x):
 
 def relu(x):
     """ReLU(x) = max(0, x)"""
+    out = Tensor(np.maximum(0, x.data), (x,), 'ReLU')
+
     def _backward():
-        pass
-    pass
+        x.grad += (x.data > 0).astype(float)*out.grad # 1 kalo x > 0; else 0
+    
+    out._backward = _backward
+    return out
 
 def sigmoid(x):
     """Sigmoid(x) = 1/(1+exp(-x))"""
