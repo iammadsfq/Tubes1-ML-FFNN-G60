@@ -10,3 +10,30 @@ def linear(x):
 
     out._backward = _backward
     return out
+
+def relu(x):
+    """ReLU(x) = max(0, x)"""
+    def _backward():
+        pass
+    pass
+
+def sigmoid(x):
+    """Sigmoid(x) = 1/(1+exp(-x))"""
+    def _backward():
+        pass
+    pass
+
+def tanh(x):
+    """tanh(x) = (exp(x) - exp(-x))/(exp(x) + exp(-x))"""
+    def _backward():
+        pass
+    pass
+
+def softmax(x):
+    """
+    Softmax(x)_i = exp(x_i) / sum(exp(x_j))
+    Dapat menerima input berupa batch
+    """
+    def _backward():
+        pass
+    pass
