@@ -70,6 +70,11 @@ class Tensor:
         out._backward = _backward
         return out
 
+    def __neg__(self):
+        return self*-1
+    
+    def __sub__(self,other):
+        return self + (-other)
 
     def backward(self):
         """ Memulai proses backpropagation dari node ini. """
