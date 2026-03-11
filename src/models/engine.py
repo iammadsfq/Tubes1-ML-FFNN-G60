@@ -58,4 +58,19 @@ class Tensor:
 
     def backward(self):
         """ Memulai proses backpropagation dari node ini. """
-        pass
+        self.grad = np.ones_like(self.data)
+
+        topo = []
+        visited = set()
+
+        def build_topo(v):
+            if v not in visited:
+                visited.add(v)
+                for child in v._prev:
+                    build_topo(child)
+                topo.append(v)
+        
+        build_topo(self)
+
+        for node in reversed(topo):
+            node._backward()
