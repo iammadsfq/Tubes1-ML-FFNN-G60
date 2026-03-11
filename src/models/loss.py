@@ -22,3 +22,25 @@ def mse_loss(y_true, y_pred):
     
     out._backward = _backward
     return out
+
+def binary_cross_entropy(y_true, y_pred):
+    """
+    Menghitung Binary Cross-Entropy untuk klasifikasi biner
+    Menggunakan ln
+    """
+
+    n = y_true.shape[0] # Batch size
+    def _backward():
+        pass
+    pass
+
+def categorical_cross_entropy(y_true, y_pred):
+    """
+    Menghitung Categorical Cross-Entropy untuk multi-class
+    y_true diasumsikan dalam bentuk one-hot encoding
+    """
+
+    n = y_true.shape[0] # Batch size
+    def _backward():
+        pass
+    return out
