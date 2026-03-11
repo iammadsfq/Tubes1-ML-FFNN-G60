@@ -1,4 +1,6 @@
-from .engine import Value
+from .engine import Tensor
+import models.activations as activations
+import models.loss as loss_module
 import numpy as np
 
 class Module:
@@ -10,18 +12,33 @@ class Module:
         return []
 
 class Layer(Module):
-    def __init__(self, nin, nout, activation='linear'):
-        # TODO: inisialisasi bobot dan bias
-        # TODO: implement metode inisialisasi: Zero, Uniform, Normal, Xavier, He
-        pass
+    def __init__(self, nin, nout, activation='linear', init_method='normal', seed=42, **kwargs):
+        if seed is not None:
+            np.random.seed(seed)
+        self.activation_name = activation.lower()
+
+        if init_method == 'zero':
+            w_data = np.zeros((nin, nout))
+        elif init_method == 'uniform':
+            low, high = kwargs.get('lower', -0.1), kwargs.get('upper', 0.1)
+            w_data = np.random.uniform(low, high, (nin, nout))
+        elif init_method == 'normal':
+            mean, var = kwargs.get('mean', 0.0), kwargs.get('variance', 1.0)
+            w_data = np.random.normal(mean, np.sqrt(var), (nin,nout))
+        elif init_method == 'xavier':
+            w_data = np.random.randn(nin, nout) * np.sqrt(1/nin)
+        elif init_method == 'he':
+            w_data = np.random.randn(nin, nout) * np.sqrt(2/nin)
+
+        self.w = Tensor(w_data)
+        self.b = Tensor(np.zeros((1, nout)))
 
     def __call__(self, x):
-        # TODO: operasi linear: out = (x @ W) + b
-        # TODO: terapkan fungsi aktivasi (linear, relu, sigmoid, tanh, softmax)
-        pass
+        act_func = getattr(activations, self.activation_name)
+        return act_func(x @ self.w + self.b)
+        
     def parameters(self):
-        # TODO: return list bobot dan bias
-        return []
+        return [self.w, self.b]
 
 class FFNN(Module):
     def __init__(
