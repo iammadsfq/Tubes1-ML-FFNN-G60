@@ -75,6 +75,16 @@ class Tensor:
     
     def __sub__(self,other):
         return self + (-other)
+    
+    def __pow__(self, n):
+        assert isinstance(n, (int,float)), "n hanya bisa angka biasa"
+        out = Tensor(self.data**n, (self,), f'**{n}')
+
+        def _backward():
+            self.grad += (n*self.data**(n-1))*out.grad
+        
+        out._backward = _backward
+        return out
 
     def backward(self):
         """ Memulai proses backpropagation dari node ini. """
