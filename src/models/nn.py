@@ -1,3 +1,5 @@
+import os
+import pickle
 from .engine import Tensor
 from models.optimizers import *
 import models.activations as activations
@@ -111,6 +113,8 @@ class FFNN(Module):
             loss_fn: callable = loss_module.mse_loss
         elif self.loss_name.lower() == 'bce':
             loss_fn: callable = loss_module.binary_cross_entropy
+        elif self.loss_name.lower() == 'cce':
+            loss_fn: callable = loss_module.categorical_cross_entropy
         else:
             raise ValueError(f"Loss {self.loss_name} not supported yet.")
 
@@ -212,8 +216,18 @@ class FFNN(Module):
         return out
 
     def save(self, path):
-        # TODO: simpan state_dict (bobot & bias) ke file
-        pass
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        state = {
+            "layers_config": self.layers_config,
+            "loss_name": self.loss_name,
+            "activations": [layer.activation_name for layer in self.layers],
+            "init_method": None,
+            "params": [
+                {"w": layer.w.data, "b": layer.b.data} for layer in self.layers
+            ],
+        }
+        with open(path, "wb") as f:
+            pickle.dump(state, f)
 
     def load(self, path):
         # TODO: load bobot dan bias dari file ke model
