@@ -94,11 +94,11 @@ class FFNN(Module):
 
         # [x] forward pass
         # [x] calc loss
-        # [ ] regularisation (L1/L2)
+        # [x] regularisation (L1/L2)
         # [x] backward pass
         # [x] optimizer step
         # [x] append loss history
-        # [ ] progress bar?
+        # [x] progress bar
 
         if solver.lower() == 'sgd':
             optimizer: BaseOptimizer = SGD(self.parameters(), lr=lr)
