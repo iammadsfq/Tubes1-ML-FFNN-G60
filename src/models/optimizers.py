@@ -4,8 +4,8 @@ class SGD:
         self.lr = lr
 
     def step(self):
-        # TODO: implement pembaruan bobot dengan mengiterasi semua p di self.parameters
-        pass
+        for p in self.parameters:
+                p.data -= self.lr * p.grad
 
 class Adam: # ini kalo mw implement adam
     pass
