@@ -164,14 +164,14 @@ class FFNN(Module):
                     bar_length = 30
                     filled_length = int(bar_length * progress)
 
-                    if filled_length == bar_length:
-                        bar = '-' * bar_length
-                    else:
-                        bar = '-' * filled_length + '>' + '.' * (bar_length - filled_length - 1)
+                    # if filled_length == bar_length:
+                    bar = '[\033[32m' + '-' * filled_length + '>' * (filled_length != bar_length) + '\033[0m' + '.' * (bar_length - filled_length - 1) + ']'
+                    # else:
+                    #     bar = '-' * filled_length + '>' + '.' * (bar_length - filled_length - 1)
 
                     current_avg_loss = epoch_loss / current_batch
 
-                    sys.stdout.write(f"\r{current_batch}/{n_batches} [\033[32m{bar}\033[0m] - loss: {current_avg_loss:.4f}")
+                    sys.stdout.write(f"\r{current_batch}/{n_batches} {bar} - loss: {current_avg_loss:.4f}")
                     sys.stdout.flush()
 
             avg_train_loss = epoch_loss / n_batches
