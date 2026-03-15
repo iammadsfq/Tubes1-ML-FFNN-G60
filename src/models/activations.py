@@ -52,10 +52,22 @@ def softmax(x):
     """
     Softmax(x)_i = exp(x_i) / sum(exp(x_j))
     Dapat menerima input berupa batch
+    Refrensi: https://eli.thegreenplace.net/2016/the-softmax-function-and-its-derivative/
     """
+    x_shifted = x.data - np.max(x.data, axis=1, keepdims=True) #shifted untuk numerical stability
+    exp_x = np.exp(x_shifted)
+    sm = exp_x / np.sum(exp_x, axis=1, keepdims=True)
+    out = Tensor(sm, (x,), 'Softmax')
     def _backward():
-        pass
-    pass
+        grad = np.zeros_like(sm)
+        for i in range(len(sm)):
+            s_i = np.reshape(sm[i], (-1, 1))
+            jm = np.diagflat(s_i) - (np.dot(s_i, s_i.T))
+            grad[i] = np.dot(jm, out.grad[i])
+        x.grad += grad
+            
+    out._backward = _backward
+    return out
 
 
 ## BONUS
