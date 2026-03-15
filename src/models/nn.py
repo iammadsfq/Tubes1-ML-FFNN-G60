@@ -6,6 +6,7 @@ import models.activations as activations
 import models.loss as loss_module
 import numpy as np
 import sys
+import matplotlib.pyplot as plt
 
 class Module:
     def zero_grad(self):
@@ -255,10 +256,48 @@ class FFNN(Module):
         self.loss_name = state.get("loss_name", self.loss_name)
         print(f"Model successfully loaded from {path}")
 
-    def plot_weights_distribution(self, layer_indices):
-        # TODO: tampilkan grafik distribusi bobot dari layer-layer yang dipilih
-        pass
+    def plot_weights_distribution(self, layer_indices, bins = 30):
+        if layer_indices is None:
+            layer_indices = list(range(len(self.layers)))
+        if isinstance(layer_indices, int):
+            layer_indices = [layer_indices]
 
-    def plot_gradients_distribution(self, layer_indices):
-        # TODO: tampilkan grafik distribusi gradien bobot dari layer-layer yang dipilih
-        pass
+        plt.figure(figsize=(5 * len(layer_indices), 4))
+        for idx, layer_idx in enumerate(layer_indices):
+            if layer_idx < 0 or layer_idx >= len(self.layers):
+                raise IndexError(f"Layer index {layer_idx} out of range.")
+
+            w = self.layers[layer_idx].w.data.flatten()
+            plt.subplot(1, len(layer_indices), idx + 1)
+            plt.hist(w, bins=bins, color="C0", alpha=0.8)
+            plt.title(f"Layer {layer_idx} Weights")
+            plt.xlabel("Weight value")
+            plt.ylabel("Frequency")
+        plt.tight_layout()
+        plt.show()
+
+    def plot_gradients_distribution(self, layer_indices, bins = 30):
+        if layer_indices is None:
+            layer_indices = list(range(len(self.layers)))
+        if isinstance(layer_indices, int):
+            layer_indices = [layer_indices]
+
+        plt.figure(figsize=(5 * len(layer_indices), 4))
+        for idx, layer_idx in enumerate(layer_indices):
+            if layer_idx < 0 or layer_idx >= len(self.layers):
+                raise IndexError(f"Layer index {layer_idx} out of range.")
+
+            w_grad = self.layers[layer_idx].w.grad.flatten()
+            b_grad = self.layers[layer_idx].b.grad.flatten()
+
+            plt.subplot(1, len(layer_indices), idx + 1)
+            if w_grad.size > 0:
+                plt.hist(w_grad, bins=bins, alpha=0.7, label="w grad")
+            if b_grad.size > 0:
+                plt.hist(b_grad, bins=bins, alpha=0.7, label="b grad")
+            plt.title(f"Layer {layer_idx} Gradients")
+            plt.xlabel("Gradient value")
+            plt.ylabel("Frequency")
+            plt.legend()
+        plt.tight_layout()
+        plt.show()
