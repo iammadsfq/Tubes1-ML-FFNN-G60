@@ -64,6 +64,7 @@ class FFNN(Module):
     ):
         self.layers_config = layers_config
         self.loss_name = loss_function
+        self.init_method = init_method
         self.random_state = random_state
         self.layers = []
 
@@ -154,7 +155,6 @@ class FFNN(Module):
                 total_loss = base_loss + reg_loss
                 epoch_loss += total_loss.data
 
-                # print(y_pred.data, base_loss.data)
                 self.zero_grad()
                 total_loss.backward()
 
@@ -225,7 +225,7 @@ class FFNN(Module):
             "layers_config": self.layers_config,
             "loss_name": self.loss_name,
             "activations": [layer.activation_name for layer in self.layers],
-            "init_method": None,
+            "init_method": self.init_method,
             "params": [
                 {"rand": layer.random_state, "w": layer.w.data, "b": layer.b.data} for layer in self.layers
             ],
@@ -259,8 +259,46 @@ class FFNN(Module):
             layer.b.grad = np.zeros_like(layer.b.data)
 
         self.loss_name = state.get("loss_name", self.loss_name)
+        self.init_method = state.get("init_method", self.init_method)
         self.random_state = state.get("rand", self.loss_name)
         print(f"Model successfully loaded from {path}")
+
+    @classmethod
+    def load_new(cls, path):
+        """
+        Load and create new instance
+        """
+        with open(path, "rb") as f:
+            state = pickle.load(f)
+
+        instance = cls(
+            state['layers_config'],
+            state['activations'],
+            state['loss_name'],
+            state['init_method'],
+            state['rand']
+        )
+
+        for layer, layer_activation_name, layer_state in zip(instance.layers, state["activations"], state["params"]):
+            if layer.w.data.shape != layer_state["w"].shape:
+                raise ValueError(
+                    f"Shape mismatch for weights: {layer.w.data.shape} vs {layer_state['w'].shape}"
+                )
+            if layer.b.data.shape != layer_state["b"].shape:
+                raise ValueError(
+                    f"Shape mismatch for bias: {layer.b.data.shape} vs {layer_state['b'].shape}"
+                )
+            layer.activation_name = layer_activation_name
+            layer.random_state = layer_state["rand"]
+            layer.w.data = np.array(layer_state["w"], dtype=layer.w.data.dtype)
+            layer.b.data = np.array(layer_state["b"], dtype=layer.b.data.dtype)
+            layer.w.grad = np.zeros_like(layer.w.data)
+            layer.b.grad = np.zeros_like(layer.b.data)
+
+        return instance
+
+
+
 
     def plot_weights_distribution(self, layer_indices, bins = 30):
         if layer_indices is None:
