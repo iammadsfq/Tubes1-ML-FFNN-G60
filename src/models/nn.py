@@ -42,6 +42,7 @@ class Layer(Module):
         elif init_method == 'he':
             w_data = np.random.randn(nin, nout) * np.sqrt(2/nin)
 
+        self.random_state = random_state
         self.w = Tensor(w_data)
         self.b = Tensor(np.zeros((1, nout)))
 
@@ -63,6 +64,7 @@ class FFNN(Module):
     ):
         self.layers_config = layers_config
         self.loss_name = loss_function
+        self.random_state = random_state
         self.layers = []
 
         if isinstance(activations, str):
@@ -219,12 +221,13 @@ class FFNN(Module):
     def save(self, path):
         os.makedirs(os.path.dirname(path), exist_ok=True)
         state = {
+            "rand": self.random_state,
             "layers_config": self.layers_config,
             "loss_name": self.loss_name,
             "activations": [layer.activation_name for layer in self.layers],
             "init_method": None,
             "params": [
-                {"w": layer.w.data, "b": layer.b.data} for layer in self.layers
+                {"rand": layer.random_state, "w": layer.w.data, "b": layer.b.data} for layer in self.layers
             ],
         }
         with open(path, "wb") as f:
@@ -239,7 +242,7 @@ class FFNN(Module):
                 f"Loaded model has {len(state['params'])} layers, but current model has {len(self.layers)}."
             )
 
-        for layer, layer_state in zip(self.layers, state["params"]):
+        for layer, layer_activation_name, layer_state in zip(self.layers, state["activations"], state["params"]):
             if layer.w.data.shape != layer_state["w"].shape:
                 raise ValueError(
                     f"Shape mismatch for weights: {layer.w.data.shape} vs {layer_state['w'].shape}"
@@ -248,12 +251,15 @@ class FFNN(Module):
                 raise ValueError(
                     f"Shape mismatch for bias: {layer.b.data.shape} vs {layer_state['b'].shape}"
                 )
+            layer.activation_name = layer_activation_name
+            layer.random_state = layer_state["rand"]
             layer.w.data = np.array(layer_state["w"], dtype=layer.w.data.dtype)
             layer.b.data = np.array(layer_state["b"], dtype=layer.b.data.dtype)
             layer.w.grad = np.zeros_like(layer.w.data)
             layer.b.grad = np.zeros_like(layer.b.data)
 
         self.loss_name = state.get("loss_name", self.loss_name)
+        self.random_state = state.get("rand", self.loss_name)
         print(f"Model successfully loaded from {path}")
 
     def plot_weights_distribution(self, layer_indices, bins = 30):
