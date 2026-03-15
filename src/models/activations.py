@@ -4,7 +4,7 @@ from models.engine import Tensor
 def linear(x):
     """Linear(x) = x"""
     out = Tensor(x.data, (x,), 'linear')
-    
+
     def _backward():
         x.grad += 1.0*out.grad
 
@@ -17,15 +17,22 @@ def relu(x):
 
     def _backward():
         x.grad += (x.data > 0).astype(float)*out.grad # 1 kalo x > 0; else 0
-    
+
     out._backward = _backward
     return out
 
 def sigmoid(x):
     """Sigmoid(x) = 1/(1+exp(-x))"""
+
+    # clamp x.data? idk it works so far lol
+    sig = 1.0 / (1.0 + np.exp(-x.data))
+
+    out = Tensor(sig, (x,), 'Sigmoid')
     def _backward():
-        pass
-    pass
+        x.grad += (sig * (1.0 - sig)) * out.grad
+
+    out._backward = _backward
+    return out
 
 def tanh(x):
     """tanh(x) = (exp(x) - exp(-x))/(exp(x) + exp(-x))"""
