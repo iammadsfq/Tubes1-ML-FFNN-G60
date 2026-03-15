@@ -42,7 +42,7 @@ def tanh(x):
     out = Tensor(v, (x,), 'Tanh')
 
     def _backward():
-        x.grad += ((2.0/(e1-e2)) ** 2) * out.grad
+        x.grad += (1.0 - v**2) * out.grad
 
     out._backward = _backward
     return out
