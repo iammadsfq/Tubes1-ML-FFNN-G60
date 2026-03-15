@@ -36,9 +36,17 @@ def sigmoid(x):
 
 def tanh(x):
     """tanh(x) = (exp(x) - exp(-x))/(exp(x) + exp(-x))"""
+    e1 = np.exp(x.data)
+    e2 = np.exp(-x.data)
+
+    v = (e1-e2)/(e1+e2)
+    out = Tensor(v, (x,), 'Tanh')
+
     def _backward():
-        pass
-    pass
+        x.grad += ((2.0/(e1-e2)) ** 2) * out.grad
+
+    out._backward = _backward
+    return out
 
 def softmax(x):
     """
@@ -48,3 +56,16 @@ def softmax(x):
     def _backward():
         pass
     pass
+
+
+## BONUS
+
+def leakyrelu(x, a=0.01):
+    """Leaky ReLU(x) = ax if x <= 0 else x"""
+    out = Tensor( np.where(x.data <= 0, a*x.data, x.data), (x,), 'Leaky ReLU')
+
+    def _backward():
+        x.grad += np.where(x.data <= 0, a, 1) * out.grad
+
+    out._backward = _backward
+    return out
