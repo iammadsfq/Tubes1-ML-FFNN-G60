@@ -24,8 +24,7 @@ def relu(x):
 def sigmoid(x):
     """Sigmoid(x) = 1/(1+exp(-x))"""
 
-    # clamp x.data? idk it works so far lol
-    sig = 1.0 / (1.0 + np.exp(-x.data))
+    sig = np.where(x >= 0, 1 / (1 + np.exp(-x)), np.exp(x)/ (1 + np.exp(x)))
 
     out = Tensor(sig, (x,), 'Sigmoid')
     def _backward():
