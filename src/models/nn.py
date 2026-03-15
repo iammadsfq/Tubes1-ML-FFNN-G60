@@ -3,6 +3,7 @@ from models.optimizers import *
 import models.activations as activations
 import models.loss as loss_module
 import numpy as np
+import sys
 
 class Module:
     def zero_grad(self):
@@ -85,11 +86,11 @@ class FFNN(Module):
             solver='sgd',
             batch_size=32,
             lr=0.01,
+            l1_lambda=0.0,
+            l2_lambda=0.0,
             epochs=100,
             verbose=1
             ):
-
-        history = {'train_loss': [], 'val_loss': []}
 
         # [x] forward pass
         # [x] calc loss
@@ -115,14 +116,18 @@ class FFNN(Module):
 
         history = {'train_loss': [], 'val_loss': []}
         n_samples = X_train.shape[0]
+        n_batches = int(np.ceil(n_samples / batch_size)) # for prog bar
 
         for epoch in range(epochs):
             indices = np.arange(n_samples)
             np.random.shuffle(indices)
 
             epoch_loss = 0.0
-            batches = 0
 
+            if verbose:
+                print(f"Epoch {epoch+1}/{epochs}")
+
+            # train
             for i in range(0, n_samples, batch_size):
                 batch_indices = indices[i:i+batch_size]
                 X_batch = Tensor(X_train[batch_indices])
@@ -130,20 +135,69 @@ class FFNN(Module):
 
                 y_pred = self.forward(X_batch)
 
-                loss = loss_fn(y_batch, y_pred)
-                epoch_loss += loss.data
-                batches += 1
+                base_loss = loss_fn(y_batch, y_pred)
+                reg_loss = Tensor(0.0)
+                for layer in self.layers:
+                    w = layer.w # gk usah bias
+                    if l1_lambda > 0.0:
+                        reg_loss += w.abs().sum() * l1_lambda
+                    if l2_lambda > 0.0:
+                        reg_loss += (w ** 2).sum() * l2_lambda
 
+                total_loss = base_loss + reg_loss
+                epoch_loss += total_loss.data
+
+                # print(y_pred.data, base_loss.data)
                 self.zero_grad()
-                loss.backward()
+                total_loss.backward()
 
                 optimizer.step()
 
-            avg_loss = epoch_loss / batches
-            history['train_loss'].append(avg_loss)
+                if verbose:
+                    current_batch = (i // batch_size) + 1
+                    progress = current_batch / n_batches
+                    bar_length = 30
+                    filled_length = int(bar_length * progress)
 
-            if verbose and (epoch + 1) % 10 == 0:
-                print(f"Epoch {epoch+1}/{epochs}, Loss = {avg_loss:.8f}")
+                    if filled_length == bar_length:
+                        bar = '-' * bar_length
+                    else:
+                        bar = '-' * filled_length + '>' + '.' * (bar_length - filled_length - 1)
+
+                    current_avg_loss = epoch_loss / current_batch
+
+                    sys.stdout.write(f"\r{current_batch}/{n_batches} [\033[32m{bar}\033[0m] - loss: {current_avg_loss:.4f}")
+                    sys.stdout.flush()
+
+            avg_train_loss = epoch_loss / n_batches
+            history['train_loss'].append(avg_train_loss)
+
+            # validation
+            val_loss_str = ""
+            if X_val is not None and y_val is not None:
+                X_val_t = Tensor(X_val)
+                y_val_t = Tensor(y_val)
+
+                y_val_pred = self.forward(X_val_t)
+                val_base_loss = loss_fn(y_val_t, y_val_pred)
+
+                val_reg_loss = Tensor(0.0)
+                for layer in self.layers:
+                    w = layer.w
+                    if l1_lambda > 0.0:
+                        val_reg_loss = val_reg_loss + w.abs().sum() * l1_lambda
+                    if l2_lambda > 0.0:
+                        val_reg_loss = val_reg_loss + (w ** 2).sum() * l2_lambda
+
+                total_val_loss = val_base_loss + val_reg_loss
+                avg_val_loss = total_val_loss.data
+
+                history['val_loss'].append(avg_val_loss)
+                val_loss_str = f" - val_loss: {avg_val_loss:.4f}"
+
+            if verbose:
+                sys.stdout.write(val_loss_str + "\n")
+
 
         return history
 

@@ -15,22 +15,22 @@ class Tensor:
         def _backward():
             grad_self = out.grad
             grad_other = out.grad
-            
+
             while grad_self.ndim > self.data.ndim:
                 grad_self = np.sum(grad_self, axis=0)
             for i in range(self.data.ndim):
                 if self.data.shape[i] == 1 and grad_self.shape[i] > 1:
                     grad_self = np.sum(grad_self, axis=i, keepdims=True)
-            
+
             while grad_other.ndim > other.data.ndim:
                 grad_other = np.sum(grad_other, axis=0)
             for i in range(other.data.ndim):
                 if other.data.shape[i] == 1 and grad_other.shape[i] > 1:
                     grad_other = np.sum(grad_other, axis=i, keepdims=True)
-            
+
             self.grad += grad_self
             other.grad += grad_other
-        
+
         out._backward = _backward
         return out
 
@@ -40,10 +40,10 @@ class Tensor:
         def _backward():
             self.grad += out.grad @ other.data.T
             other.grad += self.data.T @ out.grad
-        
+
         out._backward = _backward
         return out
-    
+
     def __mul__(self, other):
         other = other if isinstance(other, Tensor) else Tensor(other)
         out = Tensor(self.data * other.data, (self, other), '*')
@@ -72,17 +72,36 @@ class Tensor:
 
     def __neg__(self):
         return self*-1
-    
+
     def __sub__(self,other):
         return self + (-other)
-    
+
     def __pow__(self, n):
         assert isinstance(n, (int,float)), "n hanya bisa angka biasa"
         out = Tensor(self.data**n, (self,), f'**{n}')
 
         def _backward():
             self.grad += (n*self.data**(n-1))*out.grad
-        
+
+        out._backward = _backward
+        return out
+
+    def sum(self):
+        out = Tensor(np.sum(self.data), (self,), 'sum')
+
+        def _backward():
+            self.grad += np.ones_like(self.data) * out.grad
+
+        out._backward = _backward
+        return out
+
+    def abs(self):
+        out = Tensor(np.abs(self.data), (self,), 'abs')
+
+        def _backward():
+            # deriv of |x| is sign of x
+            self.grad += np.sign(self.data) * out.grad
+
         out._backward = _backward
         return out
 
@@ -99,7 +118,7 @@ class Tensor:
                 for child in v._prev:
                     build_topo(child)
                 topo.append(v)
-        
+
         build_topo(self)
 
         for node in reversed(topo):
