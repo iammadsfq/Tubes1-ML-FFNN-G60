@@ -230,8 +230,30 @@ class FFNN(Module):
             pickle.dump(state, f)
 
     def load(self, path):
-        # TODO: load bobot dan bias dari file ke model
-        pass
+        with open(path, "rb") as f:
+            state = pickle.load(f)
+
+        if len(state["params"]) != len(self.layers):
+            raise ValueError(
+                f"Loaded model has {len(state['params'])} layers, but current model has {len(self.layers)}."
+            )
+
+        for layer, layer_state in zip(self.layers, state["params"]):
+            if layer.w.data.shape != layer_state["w"].shape:
+                raise ValueError(
+                    f"Shape mismatch for weights: {layer.w.data.shape} vs {layer_state['w'].shape}"
+                )
+            if layer.b.data.shape != layer_state["b"].shape:
+                raise ValueError(
+                    f"Shape mismatch for bias: {layer.b.data.shape} vs {layer_state['b'].shape}"
+                )
+            layer.w.data = np.array(layer_state["w"], dtype=layer.w.data.dtype)
+            layer.b.data = np.array(layer_state["b"], dtype=layer.b.data.dtype)
+            layer.w.grad = np.zeros_like(layer.w.data)
+            layer.b.grad = np.zeros_like(layer.b.data)
+
+        self.loss_name = state.get("loss_name", self.loss_name)
+        print(f"Model successfully loaded from {path}")
 
     def plot_weights_distribution(self, layer_indices):
         # TODO: tampilkan grafik distribusi bobot dari layer-layer yang dipilih
