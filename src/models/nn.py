@@ -21,13 +21,24 @@ class Layer(Module):
             self,
             nin,
             nout,
-            activation='linear',
+            activation_name='linear',
             init_method='normal',
             random_state=42,
             **kwargs):
+
         if random_state is not None:
             np.random.seed(random_state)
-        self.activation_name = activation.lower()
+
+        self.activation_name = activation_name.lower()
+
+
+        if not isinstance(init_method, str):
+            raise ValueError("init_method must be str")
+
+        init_method = init_method.lower()
+
+        if init_method not in {'zero', 'uniform', 'normal', 'xavier', 'he'}:
+            raise ValueError(f"activation name not supported {init_method}")
 
         if init_method == 'zero':
             w_data = np.zeros((nin, nout))
@@ -46,9 +57,38 @@ class Layer(Module):
         self.w = Tensor(w_data)
         self.b = Tensor(np.zeros((1, nout)))
 
+    @property
+    def activation_name(self):
+        return self._activation_name
+
+    @activation_name.setter
+    def activation_name(self, value):
+        if not isinstance(value, str):
+            raise ValueError("activation must be str")
+
+        if value not in {'linear', 'relu', 'sigmoid', 'tanh', 'softmax', 'leakyrelu'}:
+            raise ValueError(f"activation name not supported {value}")
+
+        self._activation_name = value
+
+        if self.activation_name == 'linear':
+            self.activation = activations.Linear()
+        elif self.activation_name == 'relu':
+            self.activation = activations.ReLU()
+        elif self.activation_name == 'sigmoid':
+            self.activation = activations.Sigmoid()
+        elif self.activation_name == 'tanh':
+            self.activation = activations.TanH()
+        elif self.activation_name == 'softmax':
+            self.activation = activations.Softmax()
+        elif self.activation_name == 'leakyrelu':
+            self.activation = activations.LeakyReLU()
+
+        print(f"activation name set {self.activation_name}")
+        print(f"activation set {self.activation}")
+
     def __call__(self, x):
-        act_func = getattr(activations, self.activation_name)
-        return act_func(x @ self.w + self.b)
+        return self.activation(x @ self.w + self.b)
 
     def parameters(self):
         return [self.w, self.b]
@@ -76,7 +116,33 @@ class FFNN(Module):
             nout = layers_config[i+1]
             act = activations[i]
             layer_seed = random_state + i if random_state is not None else None
-            self.layers.append(Layer(nin, nout, activation=act, init_method=init_method, random_state=layer_seed))
+            self.layers.append(Layer(nin, nout, activation_name=act, init_method=init_method, random_state=layer_seed))
+
+    @property
+    def loss_name(self):
+        return self._loss_name
+
+    @loss_name.setter
+    def loss_name(self, value):
+        if not isinstance(value, str):
+            raise ValueError("loss_name must be str")
+
+        value = value.lower()
+
+        if value not in {'mse', 'mseloss', 'bce', 'binaryclassentropy', 'cce', 'categoricalclassentropy'}:
+            raise ValueError(f"loss name not supported {value}")
+
+        self._loss_name = value
+
+        if self.loss_name in {'mse', 'mseloss'}:
+            self.loss_fn = loss_module.MSELoss()
+        elif self.loss_name in {'binaryclassentropy', "bce"}:
+            self.loss_fn = loss_module.BinaryClassEntropy()
+        elif self.loss_name in {'categoricalclassentropy', 'cce'}:
+            self.loss_fn = loss_module.CategoricalClassEntropy()
+
+        print(f"loss name set {self.loss_name}")
+        print(f"loss fn set {self.loss_fn}")
 
     def parameters(self):
         params = []
@@ -113,15 +179,6 @@ class FFNN(Module):
         else:
             raise ValueError(f"{solver} opitimzer is not supported yet.")
 
-        if self.loss_name.lower() == 'mse':
-            loss_fn: callable = loss_module.mse_loss
-        elif self.loss_name.lower() == 'bce':
-            loss_fn: callable = loss_module.binary_cross_entropy
-        elif self.loss_name.lower() == 'cce':
-            loss_fn: callable = loss_module.categorical_cross_entropy
-        else:
-            raise ValueError(f"Loss {self.loss_name} not supported yet.")
-
         history = {'train_loss': [], 'val_loss': []}
         n_samples = X_train.shape[0]
         n_batches = int(np.ceil(n_samples / batch_size)) # for prog bar
@@ -143,7 +200,7 @@ class FFNN(Module):
 
                 y_pred = self.forward(X_batch)
 
-                base_loss = loss_fn(y_batch, y_pred)
+                base_loss = self.loss_fn(y_batch, y_pred)
                 reg_loss = Tensor(0.0)
                 for layer in self.layers:
                     w = layer.w # gk usah bias
@@ -186,7 +243,7 @@ class FFNN(Module):
                 y_val_t = Tensor(y_val)
 
                 y_val_pred = self.forward(X_val_t)
-                val_base_loss = loss_fn(y_val_t, y_val_pred)
+                val_base_loss = self.loss_fn(y_val_t, y_val_pred)
 
                 val_reg_loss = Tensor(0.0)
                 for layer in self.layers:
